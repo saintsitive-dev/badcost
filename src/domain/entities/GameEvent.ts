@@ -1,0 +1,19 @@
+export interface GameEvent {
+  id: string;
+  date: string;                               // ISO datetime
+  playerIds: string[];                        // participating player IDs
+  playerHours: Record<string, number>;        // playerId → hours (integer, min 1)
+  /** cost per court per hour */
+  courtCostPerHour: number;
+  /** number of courts booked (used when courtsPerHour is empty) */
+  numCourts: number;
+  /** per-hour court count override: key = "1"|"2"|"3", value = courts. Empty = use numCourts for all hours */
+  courtsPerHour: Record<string, number>;
+  shuttlecockCostPerUnit: number;
+  totalShuttlecocks: number;
+  /** per-hour shuttle breakdown: key = "1"|"2"|"3", value = count. Empty = equal split */
+  shuttlecocksPerHour: Record<string, number>;
+  organizerFee: number;
+  isFinalized: boolean;
+  createdAt: string;
+}
