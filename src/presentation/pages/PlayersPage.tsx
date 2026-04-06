@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import { usePlayers } from '../context/PlayersContext';
+import InstallBanner from '../components/InstallBanner';
 import type { Player } from '../../domain/entities/Player';
 
 function PlayerPill({ player, onToggleFav, onDelete }: {
@@ -56,6 +57,9 @@ export default function PlayersPage() {
     <div>
       {/* AC1 */}
       <PageHeader title="ผู้เล่น 🏸" subtitle={`ทั้งหมด ${sortedPlayers.length} คน`} />
+
+      {/* PWA install banner */}
+      <InstallBanner />
 
       {/* AC2: Add player form */}
       <div className="flex gap-2 mb-5">
