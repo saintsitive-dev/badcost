@@ -7,6 +7,7 @@ import { calculateCourtCost } from '../../domain/usecases/calculateCourtCost';
 import { calculateShuttlecockCost } from '../../domain/usecases/calculateShuttlecockCost';
 import { calculateOrganizerFee } from '../../domain/usecases/calculateOrganizerFee';
 import { calculateTotalCost } from '../../domain/usecases/calculateTotalCost';
+import type { ShuttlecockTier } from '../../domain/entities/GameEvent';
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -138,6 +139,32 @@ export default function EventPage() {
   const numCourts = event.numCourts ?? 1;
   const totalCourtPerHour = numCourts * event.courtCostPerHour;
 
+  // Tiers: use stored tiers, or auto-migrate from legacy single-price fields
+  const storedTiers = event.shuttlecockTiers ?? [];
+  const effectiveTiers: ShuttlecockTier[] = storedTiers.length > 0
+    ? storedTiers
+    : (event.shuttlecockCostPerUnit > 0 || event.totalShuttlecocks > 0)
+      ? [{ price: event.shuttlecockCostPerUnit, count: event.totalShuttlecocks }]
+      : [{ price: 0, count: 0 }];
+
+  const totalShuttlecockCost = effectiveTiers.reduce((s, t) => s + t.price * t.count, 0);
+  const totalShuttlecockCount = effectiveTiers.reduce((s, t) => s + t.count, 0);
+
+  function updateTier(index: number, field: 'price' | 'count', value: number) {
+    if (!event) return;
+    const next = effectiveTiers.map((t, i) => i === index ? { ...t, [field]: value } : t);
+    update({ ...event, shuttlecockTiers: next });
+  }
+  function addTier() {
+    if (!event) return;
+    update({ ...event, shuttlecockTiers: [...effectiveTiers, { price: 0, count: 0 }] });
+  }
+  function removeTier(index: number) {
+    if (!event) return;
+    const next = effectiveTiers.filter((_, i) => i !== index);
+    update({ ...event, shuttlecockTiers: next.length > 0 ? next : [{ price: 0, count: 0 }] });
+  }
+
   const courtCosts = useMemo(
     () => calculateCourtCost(
       event.courtCostPerHour,
@@ -149,12 +176,12 @@ export default function EventPage() {
   );
   const shuttlecockCosts = useMemo(
     () => calculateShuttlecockCost(
-      event.shuttlecockCostPerUnit,
-      event.totalShuttlecocks,
+      effectiveTiers,
       perHourShuttles ? event.shuttlecocksPerHour : {},
       event.playerHours,
     ),
-    [event.shuttlecockCostPerUnit, event.totalShuttlecocks, event.shuttlecocksPerHour, event.playerHours, perHourShuttles],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [totalShuttlecockCost, totalShuttlecockCount, event.shuttlecocksPerHour, event.playerHours, perHourShuttles],
   );
   const organizerFees = useMemo(
     () => calculateOrganizerFee(event.organizerFee, event.playerIds),
@@ -251,19 +278,58 @@ export default function EventPage() {
         )}
       </SectionCard>
 
-      {/* Shuttlecock cost — AC7 */}
+      {/* Shuttlecock cost — AC7 (multi-tier) */}
       <SectionCard title="🏸 ค่าลูก">
-        <NumberInput
-          label="ราคาลูกต่อลูก"
-          value={event.shuttlecockCostPerUnit}
-          onChange={(v) => update({ ...event, shuttlecockCostPerUnit: v })}
-        />
-        <NumberInput
-          label="จำนวนลูกที่ใช้"
-          value={event.totalShuttlecocks}
-          onChange={(v) => update({ ...event, totalShuttlecocks: v })}
-          unit="ลูก"
-        />
+        {/* Tier rows */}
+        {effectiveTiers.map((tier, i) => (
+          <div key={i} className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-slate-400 w-10 shrink-0 text-center">ชุด {i + 1}</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={tier.price || ''}
+              onChange={(e) => updateTier(i, 'price', Math.max(0, Number(e.target.value) || 0))}
+              placeholder="0"
+              className="w-20 h-10 px-3 text-right text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <span className="text-sm text-slate-500">฿/ลูก ×</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={tier.count || ''}
+              onChange={(e) => updateTier(i, 'count', Math.max(0, Number(e.target.value) || 0))}
+              placeholder="0"
+              className="w-16 h-10 px-3 text-right text-base rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <span className="text-sm text-slate-500 flex-1">ลูก</span>
+            {effectiveTiers.length > 1 && (
+              <button
+                onClick={() => removeTier(i)}
+                className="w-8 h-8 rounded-lg text-slate-300 hover:text-red-400 flex items-center justify-center text-sm active:scale-90 transition-all"
+                aria-label="ลบชุดนี้"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+
+        {/* Add tier button */}
+        <button
+          onClick={addTier}
+          className="w-full h-9 border border-dashed border-slate-300 text-slate-500 rounded-xl text-sm font-medium active:scale-95 transition-transform mb-2"
+        >
+          + เพิ่มช่วงราคา
+        </button>
+
+        {/* Summary hint */}
+        {totalShuttlecockCost > 0 && (
+          <p className="text-xs text-green-700 bg-green-50 rounded-xl px-3 py-2 mb-2">
+            💡 รวม {totalShuttlecockCost} บาท ({totalShuttlecockCount} ลูก)
+          </p>
+        )}
 
         <Toggle
           label="ระบุลูกแต่ละชั่วโมง (ถ้าต่างกัน)"
@@ -288,7 +354,7 @@ export default function EventPage() {
           </div>
         )}
 
-        {(event.shuttlecockCostPerUnit > 0 && event.totalShuttlecocks > 0) && (
+        {totalShuttlecockCost > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             <p className="text-xs text-slate-400 mb-2">ค่าลูกต่อคน</p>
             {breakdown.map((b) => (

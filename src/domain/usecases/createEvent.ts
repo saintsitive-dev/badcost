@@ -13,6 +13,7 @@ export function createEvent(playerIds: string[], date?: string): GameEvent {
     shuttlecockCostPerUnit: 0,
     totalShuttlecocks: 0,
     shuttlecocksPerHour: {},
+    shuttlecockTiers: [],
     organizerFee: 0,
     isFinalized: false,
     createdAt: new Date().toISOString(),

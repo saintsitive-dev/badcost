@@ -63,9 +63,14 @@ export default function ResultPage() {
       event.playerHours,
     );
     const hasPerHourShuttles = Object.values(event.shuttlecocksPerHour).some((v) => v > 0);
+    const storedTiers = event.shuttlecockTiers ?? [];
+    const tierData = storedTiers.length > 0
+      ? storedTiers
+      : (event.shuttlecockCostPerUnit > 0 || event.totalShuttlecocks > 0)
+        ? [{ price: event.shuttlecockCostPerUnit, count: event.totalShuttlecocks }]
+        : [];
     const shuttlecockCosts = calculateShuttlecockCost(
-      event.shuttlecockCostPerUnit,
-      event.totalShuttlecocks,
+      tierData,
       hasPerHourShuttles ? event.shuttlecocksPerHour : {},
       event.playerHours,
     );
