@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import { usePlayers } from '../context/PlayersContext';
 import InstallBanner from '../components/InstallBanner';
+import AddPlayerForm from '../components/AddPlayerForm';
 import type { Player } from '../../domain/entities/Player';
 
 function PlayerPill({ player, onToggleFav, onDelete }: {
@@ -36,19 +36,6 @@ function PlayerPill({ player, onToggleFav, onDelete }: {
 
 export default function PlayersPage() {
   const { sortedPlayers, add, remove, toggleFav } = usePlayers();
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-
-  function handleAdd() {
-    if (!name.trim()) { setError('กรุณาใส่ชื่อผู้เล่น'); return; }
-    try {
-      add(name.trim());
-      setName('');
-      setError('');
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
 
   const favorites = sortedPlayers.filter((p) => p.isFavorite);
   const rest = sortedPlayers.filter((p) => !p.isFavorite);
@@ -61,24 +48,10 @@ export default function PlayersPage() {
       {/* PWA install banner */}
       <InstallBanner />
 
-      {/* AC2: Add player form */}
-      <div className="flex gap-2 mb-5">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => { setName(e.target.value); setError(''); }}
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-          placeholder="ชื่อผู้เล่น (ไทย / English)"
-          className="flex-1 h-12 px-4 rounded-2xl border border-slate-200 bg-white text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <button
-          onClick={handleAdd}
-          className="h-12 px-5 bg-green-600 text-white rounded-2xl text-base font-semibold active:scale-95 transition-transform shadow-sm"
-        >
-          เพิ่ม
-        </button>
+      {/* AC2, AC14: Add player form with duplicate prevention */}
+      <div className="mb-5">
+        <AddPlayerForm allPlayers={sortedPlayers} onAdd={(name) => add(name)} />
       </div>
-      {error && <p className="text-red-500 text-sm -mt-3 mb-3 px-1">{error}</p>}
 
       {/* AC1, AC3, AC4: Pill grid */}
       {sortedPlayers.length === 0 ? (

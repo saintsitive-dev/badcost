@@ -8,7 +8,7 @@ const repo = new LocalStoragePlayerRepo();
 interface PlayersContextValue {
   players: Player[];
   sortedPlayers: Player[];
-  add: (name: string) => void;
+  add: (name: string) => Player;
   remove: (id: string) => void;
   toggleFav: (id: string) => void;
 }
@@ -23,7 +23,11 @@ export function PlayersProvider({ children }: { children: ReactNode }) {
     repo.save(updated);
   }, []);
 
-  const add = useCallback((name: string) => persist(addPlayer(players, name)), [players, persist]);
+  const add = useCallback((name: string): Player => {
+    const updated = addPlayer(players, name);
+    persist(updated);
+    return updated[updated.length - 1];
+  }, [players, persist]);
   const remove = useCallback((id: string) => persist(deletePlayer(players, id)), [players, persist]);
   const toggleFav = useCallback((id: string) => persist(toggleFavorite(players, id)), [players, persist]);
 

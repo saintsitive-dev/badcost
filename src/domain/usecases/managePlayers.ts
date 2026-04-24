@@ -28,3 +28,11 @@ export function sortPlayers(players: Player[]): Player[] {
     return a.name.localeCompare(b.name, 'th');
   });
 }
+
+/** AC14: returns players whose names contain `query` (case-insensitive substring match).
+ *  Returns [] when query is empty or whitespace-only. */
+export function findSimilarPlayers(players: Player[], query: string): Player[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return players.filter((p) => p.name.toLowerCase().includes(q));
+}

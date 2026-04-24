@@ -4,6 +4,7 @@ import PageHeader from '../components/PageHeader';
 import { usePlayers } from '../context/PlayersContext';
 import { createEvent } from '../../domain/usecases/createEvent';
 import { LocalStorageEventRepo } from '../../infrastructure/repositories/LocalStorageEventRepo';
+import AddPlayerForm from '../components/AddPlayerForm';
 import type { Player } from '../../domain/entities/Player';
 
 const repo = new LocalStorageEventRepo();
@@ -67,11 +68,12 @@ function PlayerRow({
 
 export default function NewEventPage() {
   const navigate = useNavigate();
-  const { sortedPlayers } = usePlayers();
+  const { sortedPlayers, add } = usePlayers();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [playerHours, setPlayerHours] = useState<Record<string, number>>({});
   const [dateValue, setDateValue] = useState(() => toLocalDateTimeValue(new Date().toISOString()));
   const [bulkHours, setBulkHours] = useState(3);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -194,7 +196,7 @@ export default function NewEventPage() {
           </div>
 
           {/* Player list */}
-          <div className="flex flex-col gap-2 mb-6">
+          <div className="flex flex-col gap-2 mb-4">
             {sortedPlayers.map((p) => (
               <PlayerRow
                 key={p.id}
@@ -205,6 +207,30 @@ export default function NewEventPage() {
                 onHoursChange={(h) => setHours(p.id, h)}
               />
             ))}
+          </div>
+
+          {/* AC13: add player on-the-spot */}
+          <div className="mb-6">
+            <button
+              onClick={() => setShowAddForm((v) => !v)}
+              className="w-full h-10 border-2 border-dashed border-slate-300 text-slate-500 rounded-2xl text-sm font-semibold active:scale-95 transition-transform"
+            >
+              {showAddForm ? '✕ ยกเลิก' : '+ เพิ่มผู้เล่น'}
+            </button>
+            {showAddForm && (
+              <div className="mt-2">
+                <AddPlayerForm
+                  allPlayers={sortedPlayers}
+                  autoFocus
+                  onAdd={(name) => {
+                    const newPlayer = add(name);
+                    setSelected((prev) => new Set([...prev, newPlayer.id]));
+                    setPlayerHours((prev) => ({ ...prev, [newPlayer.id]: bulkHours }));
+                    setShowAddForm(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </>
       )}
