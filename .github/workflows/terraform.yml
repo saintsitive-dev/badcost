@@ -44,9 +44,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: |
-          terraform taint google_firebaserules_ruleset.firestore || true
-          terraform apply -auto-approve -no-color
+        run: terraform apply -auto-approve -no-color
 
       - name: Commit updated state
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
