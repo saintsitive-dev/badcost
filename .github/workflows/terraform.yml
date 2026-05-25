@@ -46,11 +46,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: |
-          terraform state rm google_firebaserules_ruleset.firestore || true
-          terraform state rm google_firebaserules_release.firestore || true
-          terraform import google_firebaserules_release.firestore projects/bad-cost/releases/cloud.firestore/database/%28default%29/documents || true
-          terraform apply -auto-approve -no-color
+        run: terraform apply -auto-approve -no-color
 
       - name: Commit updated state
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
