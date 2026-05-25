@@ -26,6 +26,13 @@ describe('addPlayer', () => {
     assert.equal(result.length, 2);
     assert.equal(result[1].name, 'โจโจ้');
   });
+
+  test('ignores duplicate name (case-insensitive)', () => {
+    const existing = [p('1', 'Mon')];
+    const result = addPlayer(existing, 'mon');
+    assert.equal(result.length, 1);
+    assert.equal(result, existing);
+  });
 });
 
 describe('deletePlayer', () => {

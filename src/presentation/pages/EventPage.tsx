@@ -381,6 +381,36 @@ export default function EventPage() {
         )}
       </SectionCard>
 
+      {/* Cost summary */}
+      <SectionCard title="📊 สรุปค่าใช้จ่ายรวม">
+        <div className="space-y-1">
+          {totalCourtPerHour > 0 && (
+            <div className="flex justify-between text-sm py-0.5">
+              <span className="text-slate-500">ค่าสนาม ({numCourts} คอร์ต × {event.courtCostPerHour}฿/ชม. × {maxHours} ชม.)</span>
+              <span className="text-slate-700 font-medium">{breakdown.reduce((s, b) => s + b.courtCost, 0)} ฿</span>
+            </div>
+          )}
+          {totalShuttlecockCost > 0 && (
+            <div className="flex justify-between text-sm py-0.5">
+              <span className="text-slate-500">ค่าลูกแบด ({totalShuttlecockCount} ลูก)</span>
+              <span className="text-slate-700 font-medium">{breakdown.reduce((s, b) => s + b.shuttlecockCost, 0)} ฿</span>
+            </div>
+          )}
+          {event.organizerFee > 0 && (
+            <div className="flex justify-between text-sm py-0.5">
+              <span className="text-slate-500">ค่าจัดการ</span>
+              <span className="text-slate-700 font-medium">{event.organizerFee} ฿</span>
+            </div>
+          )}
+          <div className="border-t border-slate-200 mt-2 pt-2">
+            <div className="flex justify-between text-base font-bold">
+              <span className="text-slate-800">รวมทั้งหมด</span>
+              <span className="text-green-700">{breakdown.reduce((s, b) => s + b.total, 0)} ฿</span>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
       {/* Live summary */}
       <SectionCard title="💰 สรุปเบื้องต้น">
         {breakdown.map((b) => (

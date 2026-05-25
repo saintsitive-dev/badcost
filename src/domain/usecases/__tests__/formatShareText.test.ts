@@ -30,11 +30,6 @@ describe('formatShareText (AC12)', () => {
     assert.ok(text.includes('2hrs'));
   });
 
-  test('includes grand total', () => {
-    const text = formatShareText(breakdowns, '2024-01-15T10:00:00.000Z');
-    assert.ok(text.includes('493'), 'grand total 190+190+113=493 missing');
-  });
-
   test('numbered list starts with highest total', () => {
     const text = formatShareText(breakdowns, '2024-01-15T10:00:00.000Z');
     const firstEntry = text.split('\n').find((l) => l.startsWith('1.'));

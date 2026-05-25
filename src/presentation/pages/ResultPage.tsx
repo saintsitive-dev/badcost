@@ -111,40 +111,38 @@ export default function ResultPage() {
   }
 
   return (
-    <div>
-      <PageHeader title="สรุปค่าใช้จ่าย 🏸" subtitle={dateLabel} backTo={`/event/${id}`} />
+   <div>
+     <PageHeader title="สรุปค่าใช้จ่าย 🏸" subtitle={dateLabel} backTo={`/event/${id}`} />
 
-      {/* Total badge */}
-      <div className="bg-green-600 text-white rounded-2xl px-4 py-4 mb-5 flex items-center justify-between shadow-md">
-        <span className="text-base font-medium opacity-90">รวมทั้งหมด</span>
-        <span className="text-2xl font-bold">{grandTotal} บาท</span>
-      </div>
+     {/* Total badge */}
+     <div className="bg-green-600 text-white rounded-2xl px-4 py-4 mb-5 flex items-center justify-between shadow-md">
+       <span className="text-base font-medium opacity-90">รวมทั้งหมด</span>
+       <span className="text-2xl font-bold">{grandTotal} บาท</span>
+     </div>
 
-      {/* Per-player results */}
-      <div className="mb-24">
-        {breakdown.map((b, i) => (
-          <PlayerResult key={b.playerId} b={b} rank={i + 1} />
-        ))}
-      </div>
+     {/* Per-player results */}
+     <div className="mb-4">
+       {breakdown.map((b, i) => (
+         <PlayerResult key={b.playerId} b={b} rank={i + 1} />
+       ))}
+     </div>
 
-      {/* Sticky action buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 pb-safe z-40">
-        <div className="max-w-md mx-auto px-4 pt-3 pb-2 flex gap-3">
-          <button
-            onClick={() => navigate(`/event/${id}`)}
-            className="flex-1 h-12 border-2 border-slate-200 text-slate-700 rounded-2xl font-semibold text-base active:scale-95 transition-transform"
-          >
-            ← แก้ไข
-          </button>
-          <button
-            onClick={handleCopy}
-            className={`flex-1 h-12 rounded-2xl font-bold text-base active:scale-95 transition-all shadow-sm ${
-              copied ? 'bg-slate-700 text-white' : 'bg-green-600 text-white'
-            }`}
-          >
-            {copied ? '✓ คัดลอกแล้ว!' : '📋 Copy สำหรับ LINE'}
-          </button>
-        </div>
+      {/* Action buttons */}
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={() => navigate(`/event/${id}`)}
+          className="flex-1 h-12 border-2 border-slate-200 text-slate-700 rounded-2xl font-semibold text-base active:scale-95 transition-transform"
+        >
+          ← แก้ไข
+        </button>
+        <button
+          onClick={handleCopy}
+          className={`flex-1 h-12 rounded-2xl font-bold text-base active:scale-95 transition-all shadow-sm ${
+            copied ? 'bg-slate-700 text-white' : 'bg-green-600 text-white'
+          }`}
+        >
+          {copied ? '✓ คัดลอกแล้ว!' : '📋 Copy สำหรับ LINE'}
+        </button>
       </div>
     </div>
   );

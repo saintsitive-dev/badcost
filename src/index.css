@@ -10,6 +10,12 @@
   }
 }
 
+@layer components {
+  .form-input {
+    @apply w-full border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:border-emerald-400 focus:outline-none transition-colors;
+  }
+}
+
 @layer utilities {
   .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));

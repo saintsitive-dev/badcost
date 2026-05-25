@@ -3,6 +3,8 @@ import type { Player } from '../entities/Player';
 export function addPlayer(players: Player[], name: string): Player[] {
   const trimmed = name.trim();
   if (!trimmed) throw new Error('Player name cannot be empty');
+  const duplicate = players.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
+  if (duplicate) return players;
   return [
     ...players,
     {

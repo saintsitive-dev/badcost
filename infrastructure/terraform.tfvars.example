@@ -1,0 +1,5 @@
+# Example terraform.tfvars — copy to terraform.tfvars and fill in values
+# DO NOT commit terraform.tfvars with real values
+
+gcp_project_id = "your-gcp-project-id"
+app_domain     = "your-project-id.web.app"

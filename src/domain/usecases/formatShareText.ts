@@ -9,6 +9,5 @@ export function formatShareText(breakdowns: CostBreakdown[], date: string): stri
     day: 'numeric',
   });
   const lines = sorted.map((b, i) => `${i + 1}. ${b.playerName} ${b.total} (${b.hours}hrs)`);
-  const grandTotal = sorted.reduce((sum, b) => sum + b.total, 0);
-  return ['🏸 สรุปค่าแบด', `📅 ${dateStr}`, '', ...lines, '', `💰 รวม: ${grandTotal} บาท`].join('\n');
+  return ['🏸 สรุปค่าแบด', `📅 ${dateStr}`, '', ...lines].join('\n');
 }

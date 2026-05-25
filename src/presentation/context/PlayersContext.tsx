@@ -18,18 +18,35 @@ const PlayersContext = createContext<PlayersContextValue | null>(null);
 export function PlayersProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>(() => repo.getAll());
 
-  const persist = useCallback((updated: Player[]) => {
+  // Use ref to always have latest players available synchronously
+  const playersRef = { current: players };
+  playersRef.current = players;
+
+  const add = useCallback((name: string): Player => {
+    const trimmed = name.trim();
+    const current = playersRef.current;
+    const existing = current.find(p => p.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) return existing;
+    const updated = addPlayer(current, name);
+    playersRef.current = updated;
+    setPlayers(updated);
+    repo.save(updated);
+    return updated[updated.length - 1];
+  }, []);
+
+  const remove = useCallback((id: string) => {
+    const updated = deletePlayer(playersRef.current, id);
+    playersRef.current = updated;
     setPlayers(updated);
     repo.save(updated);
   }, []);
 
-  const add = useCallback((name: string): Player => {
-    const updated = addPlayer(players, name);
-    persist(updated);
-    return updated[updated.length - 1];
-  }, [players, persist]);
-  const remove = useCallback((id: string) => persist(deletePlayer(players, id)), [players, persist]);
-  const toggleFav = useCallback((id: string) => persist(toggleFavorite(players, id)), [players, persist]);
+  const toggleFav = useCallback((id: string) => {
+    const updated = toggleFavorite(playersRef.current, id);
+    playersRef.current = updated;
+    setPlayers(updated);
+    repo.save(updated);
+  }, []);
 
   return (
     <PlayersContext.Provider value={{ players, sortedPlayers: sortPlayers(players), add, remove, toggleFav }}>

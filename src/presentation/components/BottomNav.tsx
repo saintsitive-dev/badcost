@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom';
 
-const tabs = [
+export const tabs = [
   { to: '/',        label: 'ผู้เล่น',  icon: '👥' },
-  { to: '/new',     label: 'เกมใหม่',  icon: '🏸' },
-  { to: '/history', label: 'ประวัติ',  icon: '📋' },
+  { to: '/games/manage', label: 'เปิดตี้', icon: '🏸' },
+  { to: '/history', label: 'ประวัติ',  icon: '🕐' },
   { to: '/settings',label: 'ตั้งค่า',  icon: '⚙️' },
 ];
 

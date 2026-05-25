@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "concurrently \"npm run emulators\" \"npm run dev\"",
+    "emulators": "firebase emulators:start",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -12,6 +14,7 @@
     "gen-icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
+    "firebase": "^12.13.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
@@ -22,9 +25,11 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "firebase-tools": "^15.18.0",
     "globals": "^17.4.0",
     "react-router-dom": "^7.14.0",
     "sharp": "^0.34.5",
