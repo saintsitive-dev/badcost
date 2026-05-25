@@ -46,17 +46,17 @@ resource "google_firebaserules_ruleset" "firestore" {
   }
 
   depends_on = [google_firestore_database.default]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "google_firebaserules_release" "firestore" {
   provider     = google-beta
   project      = var.gcp_project_id
   name         = "cloud.firestore/database/${google_firestore_database.default.name}/documents"
-  ruleset_name = google_firebaserules_ruleset.firestore.name
+  ruleset_name = "projects/${var.gcp_project_id}/rulesets/${google_firebaserules_ruleset.firestore.id}"
 
   depends_on = [google_firebaserules_ruleset.firestore]
-
-  lifecycle {
-    ignore_changes = []
-  }
 }
