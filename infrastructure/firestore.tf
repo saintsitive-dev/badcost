@@ -55,7 +55,7 @@ resource "google_firebaserules_ruleset" "firestore" {
 resource "google_firebaserules_release" "firestore" {
   provider     = google-beta
   project      = var.gcp_project_id
-  name         = "cloud.firestore/database/${google_firestore_database.default.name}/documents"
+  name         = "cloud.firestore"
   ruleset_name = google_firebaserules_ruleset.firestore.name
 
   depends_on = [google_firebaserules_ruleset.firestore]

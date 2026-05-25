@@ -46,7 +46,10 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: terraform apply -auto-approve -no-color
+        run: |
+          terraform state rm google_firebaserules_release.firestore || true
+          terraform import google_firebaserules_release.firestore projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore || true
+          terraform apply -auto-approve -no-color
 
       - name: Verify Firestore rules
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -54,32 +57,48 @@ jobs:
           echo "$GOOGLE_CREDENTIALS" > /tmp/sa.json
           gcloud auth activate-service-account --key-file=/tmp/sa.json --quiet
           TOKEN=$(gcloud auth print-access-token)
-          echo "=== Checking release (raw response) ==="
+          echo "=== Listing all releases ==="
           curl -s -H "Authorization: Bearer $TOKEN" \
             "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases" | python3 -c "
           import json,sys
           d=json.load(sys.stdin)
           for r in d.get('releases',[]):
-            print(f\"Release: {r['name']} -> {r.get('rulesetName','?')}\")
+            print(f\"  {r['name']} -> {r.get('rulesetName','?')}\")
           "
-          echo "=== Deploying rules via Firebase REST API ==="
-          RULES_CONTENT=$(cat firestore.rules)
-          # Create a new ruleset
+          echo "=== Creating ruleset with correct rules ==="
           RULESET_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"source\":{\"files\":[{\"name\":\"firestore.rules\",\"content\":$(python3 -c "import json; print(json.dumps(open('firestore.rules').read()))")}]}}" \
             "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/rulesets")
-          echo "Ruleset response: $RULESET_RESPONSE"
           RULESET_NAME=$(echo "$RULESET_RESPONSE" | python3 -c "import json,sys;print(json.load(sys.stdin)['name'])")
-          echo "Created ruleset: $RULESET_NAME"
-          # Update the release to point to new ruleset
-          RELEASE_RESPONSE=$(curl -s -X PATCH \
+          echo "Created: $RULESET_NAME"
+          echo "=== Updating cloud.firestore release ==="
+          curl -s -X PATCH \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"release\":{\"rulesetName\":\"projects/${TF_VAR_gcp_project_id}/rulesets/${RULESET_NAME}\"}}" \
-            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F%28default%29%2Fdocuments")
-          echo "Release response: $RELEASE_RESPONSE"
+            -d "{\"release\":{\"rulesetName\":\"${RULESET_NAME}\"}}" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          if 'error' in d:
+            print(f\"ERROR: {d['error']}\")
+          else:
+            print(f\"Updated cloud.firestore -> {d.get('rulesetName','?')}\")
+          "
+          echo "=== Updating database-specific release ==="
+          curl -s -X PATCH \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"release\":{\"rulesetName\":\"${RULESET_NAME}\"}}" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F%28default%29%2Fdocuments" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          if 'error' in d:
+            print(f\"ERROR: {d['error']}\")
+          else:
+            print(f\"Updated cloud.firestore/database/(default)/documents -> {d.get('rulesetName','?')}\")
+          "
           rm -f /tmp/sa.json
 
       - name: Commit updated state
