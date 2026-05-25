@@ -1,4 +1,10 @@
 # Firestore database
+# Already exists — use import block
+
+import {
+  to = google_firestore_database.default
+  id = "projects/bad-cost/databases/(default)"
+}
 
 resource "google_firestore_database" "default" {
   provider    = google-beta
@@ -8,6 +14,10 @@ resource "google_firestore_database" "default" {
   type        = "FIRESTORE_NATIVE"
 
   depends_on = [google_firebase_project.default]
+
+  lifecycle {
+    ignore_changes = [location_id]
+  }
 }
 
 # TTL policy — auto-delete games 3 months after game date
