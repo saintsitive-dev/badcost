@@ -48,11 +48,6 @@ resource "google_firebaserules_ruleset" "firestore" {
   depends_on = [google_firestore_database.default]
 }
 
-import {
-  to = google_firebaserules_release.firestore
-  id = "projects/bad-cost/releases/cloud.firestore/database/(default)/documents"
-}
-
 resource "google_firebaserules_release" "firestore" {
   provider     = google-beta
   project      = var.gcp_project_id
@@ -60,4 +55,8 @@ resource "google_firebaserules_release" "firestore" {
   ruleset_name = google_firebaserules_ruleset.firestore.name
 
   depends_on = [google_firebaserules_ruleset.firestore]
+
+  lifecycle {
+    ignore_changes = []
+  }
 }
