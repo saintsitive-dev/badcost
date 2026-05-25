@@ -28,10 +28,8 @@ dist-ssr
 infrastructure/.tmp/
 infrastructure/.terraform/
 infrastructure/terraform.tfvars
-*.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
 
 # Terraform
 infrastructure/.terraform/
-infrastructure/.terraform.lock.hcl
