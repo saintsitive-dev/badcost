@@ -48,6 +48,32 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: terraform apply -auto-approve -no-color
 
+      - name: Verify Firestore rules
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > /tmp/sa.json
+          gcloud auth activate-service-account --key-file=/tmp/sa.json --quiet
+          TOKEN=$(gcloud auth print-access-token)
+          echo "=== Active Release ==="
+          curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F(default)%2Fdocuments" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          print('Ruleset:', d.get('rulesetName','NOT FOUND'))
+          rn=d.get('rulesetName','')
+          " 
+          RULESET=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F(default)%2Fdocuments" | python3 -c "import json,sys;print(json.load(sys.stdin).get('rulesetName',''))")
+          echo "=== Ruleset Content ==="
+          curl -s -H "Authorization: Bearer $TOKEN" \
+            "https://firebaserules.googleapis.com/v1/${RULESET}" | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          content=d.get('source',{}).get('files',[{}])[0].get('content','EMPTY')
+          print(content[:300])
+          "
+          rm -f /tmp/sa.json
+
       - name: Commit updated state
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
