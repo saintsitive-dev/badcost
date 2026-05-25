@@ -16,25 +16,24 @@ export default function InviteLandingPage() {
 
   useEffect(() => {
     if (!inviteCode) return;
-    loadGame();
-  }, [inviteCode]);
-
-  async function loadGame() {
-    try {
-      const foundGame = await getGameByInviteCode(inviteCode!);
-      if (foundGame && isGameVisible(foundGame)) {
-        setGame(foundGame);
-        if (getUserName()) {
-          navigate(`/games/${foundGame.id}`, { replace: true });
-          return;
+    async function load() {
+      try {
+        const foundGame = await getGameByInviteCode(inviteCode!);
+        if (foundGame && isGameVisible(foundGame)) {
+          setGame(foundGame);
+          if (getUserName()) {
+            navigate(`/games/${foundGame.id}`, { replace: true });
+            return;
+          }
         }
+      } catch (err) {
+        console.error('Failed to load game:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to load game:', err);
-    } finally {
-      setLoading(false);
     }
-  }
+    load();
+  }, [inviteCode, navigate]);
 
   function handleSubmitName(e: React.FormEvent) {
     e.preventDefault();

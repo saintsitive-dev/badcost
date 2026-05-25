@@ -120,6 +120,47 @@ export default function EventPage() {
   const [perHourCourts, setPerHourCourts] = useState(false);
   const [perHourShuttles, setPerHourShuttles] = useState(false);
 
+  // Tiers: use stored tiers, or auto-migrate from legacy single-price fields
+  const storedTiers = event?.shuttlecockTiers ?? [];
+  const effectiveTiers: ShuttlecockTier[] = storedTiers.length > 0
+    ? storedTiers
+    : (event && (event.shuttlecockCostPerUnit > 0 || event.totalShuttlecocks > 0))
+      ? [{ price: event.shuttlecockCostPerUnit, count: event.totalShuttlecocks }]
+      : [{ price: 0, count: 0 }];
+
+  const totalShuttlecockCost = effectiveTiers.reduce((s, t) => s + t.price * t.count, 0);
+  const totalShuttlecockCount = effectiveTiers.reduce((s, t) => s + t.count, 0);
+
+  const courtCosts = useMemo(
+    () => event ? calculateCourtCost(
+      event.courtCostPerHour,
+      event.numCourts ?? 1,
+      perHourCourts ? event.courtsPerHour : {},
+      event.playerHours,
+    ) : {} as Record<string, number>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [event?.courtCostPerHour, event?.numCourts, event?.courtsPerHour, event?.playerHours, perHourCourts],
+  );
+  const shuttlecockCosts = useMemo(
+    () => event ? calculateShuttlecockCost(
+      effectiveTiers,
+      perHourShuttles ? event.shuttlecocksPerHour : {},
+      event.playerHours,
+    ) : {} as Record<string, number>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [totalShuttlecockCost, totalShuttlecockCount, event?.shuttlecocksPerHour, event?.playerHours, perHourShuttles],
+  );
+  const organizerFees = useMemo(
+    () => event ? calculateOrganizerFee(event.organizerFee, event.playerIds) : {} as Record<string, number>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [event?.organizerFee, event?.playerIds],
+  );
+  const breakdown = useMemo(
+    () => event ? calculateTotalCost(event.playerIds, event.playerHours, courtCosts, shuttlecockCosts, organizerFees, players) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [event?.playerIds, event?.playerHours, courtCosts, shuttlecockCosts, organizerFees, players],
+  );
+
   if (!event) {
     return (
       <div className="text-center py-20 text-slate-400">
@@ -139,17 +180,6 @@ export default function EventPage() {
   const numCourts = event.numCourts ?? 1;
   const totalCourtPerHour = numCourts * event.courtCostPerHour;
 
-  // Tiers: use stored tiers, or auto-migrate from legacy single-price fields
-  const storedTiers = event.shuttlecockTiers ?? [];
-  const effectiveTiers: ShuttlecockTier[] = storedTiers.length > 0
-    ? storedTiers
-    : (event.shuttlecockCostPerUnit > 0 || event.totalShuttlecocks > 0)
-      ? [{ price: event.shuttlecockCostPerUnit, count: event.totalShuttlecocks }]
-      : [{ price: 0, count: 0 }];
-
-  const totalShuttlecockCost = effectiveTiers.reduce((s, t) => s + t.price * t.count, 0);
-  const totalShuttlecockCount = effectiveTiers.reduce((s, t) => s + t.count, 0);
-
   function updateTier(index: number, field: 'price' | 'count', value: number) {
     if (!event) return;
     const next = effectiveTiers.map((t, i) => i === index ? { ...t, [field]: value } : t);
@@ -164,33 +194,6 @@ export default function EventPage() {
     const next = effectiveTiers.filter((_, i) => i !== index);
     update({ ...event, shuttlecockTiers: next.length > 0 ? next : [{ price: 0, count: 0 }] });
   }
-
-  const courtCosts = useMemo(
-    () => calculateCourtCost(
-      event.courtCostPerHour,
-      event.numCourts ?? 1,
-      perHourCourts ? event.courtsPerHour : {},
-      event.playerHours,
-    ),
-    [event.courtCostPerHour, event.numCourts, event.courtsPerHour, event.playerHours, perHourCourts],
-  );
-  const shuttlecockCosts = useMemo(
-    () => calculateShuttlecockCost(
-      effectiveTiers,
-      perHourShuttles ? event.shuttlecocksPerHour : {},
-      event.playerHours,
-    ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [totalShuttlecockCost, totalShuttlecockCount, event.shuttlecocksPerHour, event.playerHours, perHourShuttles],
-  );
-  const organizerFees = useMemo(
-    () => calculateOrganizerFee(event.organizerFee, event.playerIds),
-    [event.organizerFee, event.playerIds],
-  );
-  const breakdown = useMemo(
-    () => calculateTotalCost(event.playerIds, event.playerHours, courtCosts, shuttlecockCosts, organizerFees, players),
-    [event.playerIds, event.playerHours, courtCosts, shuttlecockCosts, organizerFees, players],
-  );
 
   function setHours(playerId: string, hours: number) {
     if (!event) return;

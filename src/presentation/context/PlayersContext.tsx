@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import type { Player } from '../../domain/entities/Player';
 import { LocalStoragePlayerRepo } from '../../infrastructure/repositories/LocalStoragePlayerRepo';
 import { addPlayer, deletePlayer, toggleFavorite, sortPlayers } from '../../domain/usecases/managePlayers';
@@ -17,10 +17,11 @@ const PlayersContext = createContext<PlayersContextValue | null>(null);
 
 export function PlayersProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>(() => repo.getAll());
+  const playersRef = useRef(players);
 
-  // Use ref to always have latest players available synchronously
-  const playersRef = { current: players };
-  playersRef.current = players;
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
 
   const add = useCallback((name: string): Player => {
     const trimmed = name.trim();
@@ -55,6 +56,7 @@ export function PlayersProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePlayers() {
   const ctx = useContext(PlayersContext);
   if (!ctx) throw new Error('usePlayers must be used within PlayersProvider');

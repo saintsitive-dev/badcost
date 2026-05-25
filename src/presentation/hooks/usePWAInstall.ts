@@ -7,7 +7,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function usePWAInstall() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
   const [isDismissed, setIsDismissed] = useState(
     () => localStorage.getItem('badcost:install-dismissed') === '1',
   );
@@ -17,8 +16,10 @@ export function usePWAInstall() {
     window.matchMedia('(display-mode: standalone)').matches ||
     ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true);
 
+  const [isInstalled, setIsInstalled] = useState(isInStandaloneMode);
+
   useEffect(() => {
-    if (isInStandaloneMode) { setIsInstalled(true); return; }
+    if (isInStandaloneMode) return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -26,9 +27,13 @@ export function usePWAInstall() {
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    window.addEventListener('appinstalled', () => setIsInstalled(true));
+    const installedHandler = () => setIsInstalled(true);
+    window.addEventListener('appinstalled', installedHandler);
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installedHandler);
+    };
   }, [isInStandaloneMode]);
 
   async function triggerInstall() {

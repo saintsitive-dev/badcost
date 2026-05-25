@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const tabs = [
   { to: '/',        label: 'ผู้เล่น',  icon: '👥' },
   { to: '/games/manage', label: 'เปิดตี้', icon: '🏸' },

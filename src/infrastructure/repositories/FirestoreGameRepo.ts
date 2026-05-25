@@ -88,7 +88,8 @@ export async function getVisibleGames(inviteCode: string): Promise<Game[]> {
 }
 
 export async function updateGame(gameId: string, data: Partial<Game>): Promise<void> {
-  const { id, ...updateData } = data as Game;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _id, ...updateData } = data as Game;
   await updateDoc(doc(db, GAMES_COLLECTION, gameId), updateData);
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { GameEvent } from '../../domain/entities/GameEvent';
 import { LocalStorageEventRepo } from '../../infrastructure/repositories/LocalStorageEventRepo';
 
@@ -6,10 +6,6 @@ const repo = new LocalStorageEventRepo();
 
 export function useEventData(id: string) {
   const [event, setEvent] = useState<GameEvent | null>(() => repo.getById(id) ?? null);
-
-  useEffect(() => {
-    setEvent(repo.getById(id) ?? null);
-  }, [id]);
 
   const update = useCallback((updated: GameEvent) => {
     repo.save(updated);
