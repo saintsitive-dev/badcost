@@ -54,24 +54,32 @@ jobs:
           echo "$GOOGLE_CREDENTIALS" > /tmp/sa.json
           gcloud auth activate-service-account --key-file=/tmp/sa.json --quiet
           TOKEN=$(gcloud auth print-access-token)
-          echo "=== Active Release ==="
+          echo "=== Checking release (raw response) ==="
           curl -s -H "Authorization: Bearer $TOKEN" \
-            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F(default)%2Fdocuments" | python3 -c "
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases" | python3 -c "
           import json,sys
           d=json.load(sys.stdin)
-          print('Ruleset:', d.get('rulesetName','NOT FOUND'))
-          rn=d.get('rulesetName','')
-          " 
-          RULESET=$(curl -s -H "Authorization: Bearer $TOKEN" \
-            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F(default)%2Fdocuments" | python3 -c "import json,sys;print(json.load(sys.stdin).get('rulesetName',''))")
-          echo "=== Ruleset Content ==="
-          curl -s -H "Authorization: Bearer $TOKEN" \
-            "https://firebaserules.googleapis.com/v1/${RULESET}" | python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          content=d.get('source',{}).get('files',[{}])[0].get('content','EMPTY')
-          print(content[:300])
+          for r in d.get('releases',[]):
+            print(f\"Release: {r['name']} -> {r.get('rulesetName','?')}\")
           "
+          echo "=== Deploying rules via Firebase REST API ==="
+          RULES_CONTENT=$(cat firestore.rules)
+          # Create a new ruleset
+          RULESET_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"source\":{\"files\":[{\"name\":\"firestore.rules\",\"content\":$(python3 -c "import json; print(json.dumps(open('firestore.rules').read()))")}]}}" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/rulesets")
+          echo "Ruleset response: $RULESET_RESPONSE"
+          RULESET_NAME=$(echo "$RULESET_RESPONSE" | python3 -c "import json,sys;print(json.load(sys.stdin)['name'])")
+          echo "Created ruleset: $RULESET_NAME"
+          # Update the release to point to new ruleset
+          RELEASE_RESPONSE=$(curl -s -X PATCH \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"release\":{\"rulesetName\":\"projects/${TF_VAR_gcp_project_id}/rulesets/${RULESET_NAME}\"}}" \
+            "https://firebaserules.googleapis.com/v1/projects/${TF_VAR_gcp_project_id}/releases/cloud.firestore%2Fdatabase%2F%28default%29%2Fdocuments")
+          echo "Release response: $RELEASE_RESPONSE"
           rm -f /tmp/sa.json
 
       - name: Commit updated state
