@@ -49,3 +49,14 @@ jobs:
 
       - uses: actions/deploy-pages@v4
         id: deployment
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://saintsitive.space/badcost/)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Smoke test failed!"
+            exit 1
+          fi
+          echo "Smoke test passed ✓"
