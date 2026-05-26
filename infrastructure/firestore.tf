@@ -33,7 +33,7 @@ resource "google_firestore_field" "games_ttl" {
   depends_on = [google_firestore_database.default]
 }
 
-# Composite index: query games by hostId ordered by gameDate
+# Composite index: query games by hostId ordered by gameDate desc
 resource "google_firestore_index" "games_hostId_gameDate" {
   provider   = google-beta
   project    = var.gcp_project_id
@@ -42,6 +42,26 @@ resource "google_firestore_index" "games_hostId_gameDate" {
 
   fields {
     field_path = "hostId"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "gameDate"
+    order      = "DESCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}
+
+# Composite index: query visible games by inviteCode + gameDate range
+resource "google_firestore_index" "games_inviteCode_gameDate" {
+  provider   = google-beta
+  project    = var.gcp_project_id
+  database   = google_firestore_database.default.name
+  collection = "games"
+
+  fields {
+    field_path = "inviteCode"
     order      = "ASCENDING"
   }
 
