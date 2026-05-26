@@ -33,6 +33,26 @@ resource "google_firestore_field" "games_ttl" {
   depends_on = [google_firestore_database.default]
 }
 
+# Composite index: query games by hostId ordered by gameDate
+resource "google_firestore_index" "games_hostId_gameDate" {
+  provider   = google-beta
+  project    = var.gcp_project_id
+  database   = google_firestore_database.default.name
+  collection = "games"
+
+  fields {
+    field_path = "hostId"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "gameDate"
+    order      = "ASCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}
+
 # Firestore security rules
 resource "google_firebaserules_ruleset" "firestore" {
   provider = google-beta
