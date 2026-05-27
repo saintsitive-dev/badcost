@@ -99,7 +99,7 @@ async function main() {
     // Navigate to invite link as anonymous user (fresh context, no localStorage)
     const url = `${BASE_URL}/games/invite/${INVITE_CODE}`;
     console.log(`  Opening: ${url}`);
-    const waitUntil = isLocal ? 'domcontentloaded' : 'networkidle0';
+    const waitUntil = isLocal ? 'domcontentloaded' : 'networkidle2';
     await page.goto(url, { waitUntil, timeout: 15000 }).catch(() => {
       throw new Error(`Page failed to load within 15s: ${url}`);
     });
