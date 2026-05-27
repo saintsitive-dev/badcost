@@ -59,7 +59,7 @@ export default function GameDetailPage() {
     await leaveGame(gameId, myParticipant.id).catch(console.error);
   }
 
-  async function handleHostAdd(e: React.FormEvent) {
+  async function handleAddPlayer(e: React.FormEvent) {
     e.preventDefault();
     if (!gameId || !addName.trim()) return;
     try {
@@ -142,7 +142,6 @@ export default function GameDetailPage() {
           participants={participants}
           emptySlots={emptySlots}
           deviceId={deviceId}
-          isHost={!!isHost}
           onRemove={handleRemove}
         />
 
@@ -150,7 +149,7 @@ export default function GameDetailPage() {
         {isHost && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             {showAddForm ? (
-              <form onSubmit={handleHostAdd} className="flex gap-2">
+              <form onSubmit={handleAddPlayer} className="flex gap-2">
                 <input
                   type="text"
                   value={addName}
@@ -215,6 +214,30 @@ export default function GameDetailPage() {
             )}
           </div>
         )}
+
+        {/* Non-host: Add other player */}
+        {!isHost && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            {showAddForm ? (
+              <form onSubmit={handleAddPlayer} className="flex gap-2">
+                <input
+                  type="text"
+                  value={addName}
+                  onChange={e => setAddName(e.target.value)}
+                  placeholder="ชื่อผู้เล่นที่ต้องการเพิ่ม"
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                  autoFocus
+                />
+                <button type="submit" className="bg-emerald-500 text-white rounded-lg px-3 py-2 text-sm">เพิ่ม</button>
+                <button type="button" onClick={() => setShowAddForm(false)} className="text-slate-400 text-sm">ยกเลิก</button>
+              </form>
+            ) : (
+              <button onClick={() => setShowAddForm(true)} className="text-sm text-emerald-600 font-medium">
+                + เพิ่มผู้เล่นคนอื่น
+              </button>
+            )}
+          </div>
+        )}
       </Card>
     </GamePageContainer>
   );
@@ -240,11 +263,10 @@ function HostActions({ onCopyLink, onEditMax, onConvert }: {
   );
 }
 
-function ParticipantList({ participants, emptySlots, deviceId, isHost, onRemove }: {
+function ParticipantList({ participants, emptySlots, deviceId, onRemove }: {
   participants: Participant[];
   emptySlots: number;
   deviceId: string;
-  isHost: boolean;
   onRemove: (id: string) => void;
 }) {
   return (
@@ -256,9 +278,7 @@ function ParticipantList({ participants, emptySlots, deviceId, isHost, onRemove 
             {p.name}
             {p.deviceId === deviceId && <span className="text-xs text-emerald-500 ml-1">(คุณ)</span>}
           </span>
-          {isHost && (
-            <button onClick={() => onRemove(p.id)} className="text-red-400 hover:text-red-600 text-sm">✕</button>
-          )}
+          <button onClick={() => onRemove(p.id)} className="text-red-400 hover:text-red-600 text-sm">✕</button>
         </li>
       ))}
       {Array.from({ length: emptySlots }).map((_, i) => (
