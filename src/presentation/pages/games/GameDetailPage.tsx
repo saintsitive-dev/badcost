@@ -10,7 +10,7 @@ import {
   updateGame,
 } from '../../../infrastructure/repositories/FirestoreGameRepo';
 import { getCurrentUser } from '../../../infrastructure/firebase';
-import { getDeviceId, getUserName } from '../../../infrastructure/firebase/session';
+import { getDeviceId, getUserName, setUserName } from '../../../infrastructure/firebase/session';
 import { formatGameDateThai, isGameFull } from '../../../domain/entities/Game';
 import type { Game, Participant } from '../../../domain/entities/Game';
 import { GamePageContainer, Card, PrimaryButton, LoadingScreen, EmptyState } from '../../components/games';
@@ -24,6 +24,7 @@ export default function GameDetailPage() {
   const [joining, setJoining] = useState(false);
   const [addName, setAddName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [joinName, setJoinName] = useState('');
 
   const deviceId = getDeviceId();
   const userName = getUserName();
@@ -179,6 +180,34 @@ export default function GameDetailPage() {
               >
                 ออกจากเกม
               </button>
+            ) : !userName ? (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const trimmed = joinName.trim();
+                if (!trimmed || !gameId) return;
+                setUserName(trimmed);
+                setJoining(true);
+                try {
+                  await joinGame(gameId, trimmed, deviceId);
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : 'เข้าร่วมไม่สำเร็จ';
+                  alert(msg === 'Game is full' ? 'เต็มแล้ว 📌' : msg);
+                } finally {
+                  setJoining(false);
+                }
+              }} className="space-y-2">
+                <input
+                  type="text"
+                  value={joinName}
+                  onChange={e => setJoinName(e.target.value)}
+                  placeholder="ใส่ชื่อของคุณ"
+                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-base focus:border-emerald-400 focus:outline-none"
+                  required
+                />
+                <PrimaryButton type="submit" disabled={joining || isFull || !joinName.trim()}>
+                  {joining ? 'กำลังเข้าร่วม...' : isFull ? 'เต็มแล้ว 📌' : '🌟 ลงชื่อเข้าร่วม'}
+                </PrimaryButton>
+              </form>
             ) : (
               <PrimaryButton onClick={handleJoin} disabled={joining || isFull}>
                 {joining ? 'กำลังเข้าร่วม...' : isFull ? 'เต็มแล้ว 📌' : '🌟 ลงชื่อเข้าร่วม'}
