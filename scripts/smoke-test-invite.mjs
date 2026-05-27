@@ -20,8 +20,73 @@ const BASE_URL = isLocal
   : 'https://saintsitive.space/badcost';
 const INVITE_CODE = process.env.INVITE_CODE || 'ppu1so';
 
+async function seedEmulator() {
+  const FIRESTORE_EMULATOR = 'http://localhost:8080';
+  const PROJECT_ID = 'demo-badcost';
+
+  // Check if emulator is running
+  try {
+    await fetch(FIRESTORE_EMULATOR);
+  } catch {
+    console.log('  ⚠ Firestore emulator not reachable, skipping seed');
+    return;
+  }
+
+  const docUrl = `${FIRESTORE_EMULATOR}/v1/projects/${PROJECT_ID}/databases/(default)/documents/games`;
+
+  // Check if test game already exists
+  const queryRes = await fetch(`${docUrl}?key=fake`, {
+    method: 'GET',
+  });
+  const existing = await queryRes.json();
+  const hasTestGame = existing.documents?.some(
+    d => d.fields?.inviteCode?.stringValue === INVITE_CODE
+  );
+
+  if (hasTestGame) {
+    console.log('  ✓ Test game already exists in emulator');
+    return;
+  }
+
+  // Seed a test game
+  const gameDate = new Date();
+  gameDate.setDate(gameDate.getDate() + 1);
+
+  const body = {
+    fields: {
+      title: { stringValue: 'Smoke Test Game 🏸' },
+      venue: { stringValue: 'Test Court' },
+      date: { stringValue: gameDate.toISOString().split('T')[0] },
+      startTime: { stringValue: '18:00' },
+      hostId: { stringValue: 'smoke-test-host' },
+      inviteCode: { stringValue: INVITE_CODE },
+      status: { stringValue: 'open' },
+      gameDate: { timestampValue: gameDate.toISOString() },
+      expireAt: { timestampValue: new Date(gameDate.getTime() + 90 * 86400000).toISOString() },
+      maxPlayers: { integerValue: '10' },
+    },
+  };
+
+  const res = await fetch(docUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to seed emulator: ${res.status} ${text}`);
+  }
+
+  console.log('  ✓ Seeded test game in emulator');
+}
+
 async function main() {
   console.log(`🔍 Running invite flow smoke test (${isLocal ? 'local' : 'production'})...\n`);
+
+  if (isLocal) {
+    await seedEmulator();
+  }
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -34,9 +99,17 @@ async function main() {
     // Navigate to invite link as anonymous user (fresh context, no localStorage)
     const url = `${BASE_URL}/games/invite/${INVITE_CODE}`;
     console.log(`  Opening: ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 }).catch(() => {
+    const waitUntil = isLocal ? 'domcontentloaded' : 'networkidle0';
+    await page.goto(url, { waitUntil, timeout: 15000 }).catch(() => {
       throw new Error(`Page failed to load within 15s: ${url}`);
     });
+
+    // Wait for app to hydrate and navigate
+    await page.waitForFunction(
+      () => !document.querySelector('.animate-pulse'),
+      { timeout: 10000 }
+    ).catch(() => {});
+
 
     // Should redirect to game detail page
     const finalUrl = page.url();
@@ -45,7 +118,6 @@ async function main() {
     if (!finalUrl.includes('/games/')) {
       throw new Error(`Did not navigate to game page. Ended up at: ${finalUrl}`);
     }
-
     // Wait for game content to render
     await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {
       throw new Error('Game detail page did not render (no h1 found within 8s)');

@@ -55,7 +55,7 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
         run: |
-          sleep 10
+          sleep 30
           # Basic health check
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://saintsitive.space/badcost/)
           echo "HTTP status: $STATUS"
@@ -64,5 +64,13 @@ jobs:
             exit 1
           fi
           echo "Homepage OK ✓"
+          # Verify new 404.html is live before running Puppeteer
+          BODY=$(curl -s https://saintsitive.space/badcost/games/invite/ppu1so)
+          if echo "$BODY" | grep -q '?p=/'; then
+            echo "New 404.html confirmed ✓"
+          else
+            echo "⚠ New 404.html not yet propagated, waiting 30s more..."
+            sleep 30
+          fi
           # Invite flow smoke test (Puppeteer)
           node scripts/smoke-test-invite.mjs
