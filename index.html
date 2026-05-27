@@ -13,14 +13,13 @@
     <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(l) {
-        // Handle 404.html redirect
-        if (l.search[1] === '/') {
-          var decoded = l.search.slice(1).split('&').map(function(s) {
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-            l.pathname + decoded + l.hash
-          );
+        var params = new URLSearchParams(l.search);
+        var p = params.get('p');
+        if (p) {
+          var restored = '/badcost' + p.replace(/~and~/g, '&');
+          var q = params.get('q');
+          if (q) restored += '?' + q.replace(/~and~/g, '&');
+          window.history.replaceState(null, null, restored + l.hash);
         }
       }(window.location))
     </script>

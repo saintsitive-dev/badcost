@@ -51,12 +51,18 @@ jobs:
         id: deployment
 
       - name: Smoke test
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
         run: |
           sleep 10
+          # Basic health check
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://saintsitive.space/badcost/)
           echo "HTTP status: $STATUS"
           if [ "$STATUS" -ne 200 ]; then
-            echo "Smoke test failed!"
+            echo "Homepage check failed!"
             exit 1
           fi
-          echo "Smoke test passed ✓"
+          echo "Homepage OK ✓"
+          # Invite flow smoke test (Puppeteer)
+          node scripts/smoke-test-invite.mjs
