@@ -5,16 +5,23 @@
  * Uses Puppeteer to verify that the invite link actually renders
  * the game detail page with real content (not a blank page).
  *
- * The smoke test game (inviteCode: ppu1so) must exist in Firestore.
+ * Usage:
+ *   node scripts/smoke-test-invite.mjs              # test against production
+ *   node scripts/smoke-test-invite.mjs --local      # test against local dev server (http://localhost:5173)
+ *
+ * The smoke test game (inviteCode: ppu1so) must exist in Firestore (or emulator).
  */
 
 import puppeteer from 'puppeteer';
 
-const BASE_URL = 'https://saintsitive.space/badcost';
-const INVITE_CODE = 'ppu1so';
+const isLocal = process.argv.includes('--local');
+const BASE_URL = isLocal
+  ? (process.env.BASE_URL || 'http://localhost:5173/badcost')
+  : 'https://saintsitive.space/badcost';
+const INVITE_CODE = process.env.INVITE_CODE || 'ppu1so';
 
 async function main() {
-  console.log('🔍 Running invite flow smoke test...\n');
+  console.log(`🔍 Running invite flow smoke test (${isLocal ? 'local' : 'production'})...\n`);
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -27,7 +34,9 @@ async function main() {
     // Navigate to invite link as anonymous user (fresh context, no localStorage)
     const url = `${BASE_URL}/games/invite/${INVITE_CODE}`;
     console.log(`  Opening: ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 }).catch(() => {
+      throw new Error(`Page failed to load within 15s: ${url}`);
+    });
 
     // Should redirect to game detail page
     const finalUrl = page.url();
@@ -38,7 +47,9 @@ async function main() {
     }
 
     // Wait for game content to render
-    await page.waitForSelector('h1', { timeout: 10000 });
+    await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {
+      throw new Error('Game detail page did not render (no h1 found within 8s)');
+    });
 
     // Verify key elements exist on the game detail page
     const title = await page.$eval('h1', el => el.textContent);
