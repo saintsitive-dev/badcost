@@ -44,6 +44,7 @@ export default function App() {
         <Route path="/games/invite/:inviteCode" element={<Layout><Suspense fallback={<GameLoading />}><InviteLandingPage /></Suspense></Layout>} />
         <Route path="/games/:gameId" element={<Layout><Suspense fallback={<GameLoading />}><GameDetailPage /></Suspense></Layout>} />
         <Route path="/games/:gameId/start-cost" element={<Layout><Suspense fallback={<GameLoading />}><CostConfirmationPage /></Suspense></Layout>} />
+        <Route path="*" element={<Layout><PlayersPage /></Layout>} />
       </Routes>
     </PlayersProvider>
   );

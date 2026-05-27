@@ -13,6 +13,7 @@
     <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(l) {
+        // Handle 404.html redirect
         if (l.search[1] === '/') {
           var decoded = l.search.slice(1).split('&').map(function(s) {
             return s.replace(/~and~/g, '&')

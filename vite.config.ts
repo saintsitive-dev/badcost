@@ -10,6 +10,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'BadCost - คำนวณค่าแบด',
